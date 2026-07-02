@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80" viewBox="0 0 120 80">
+  <!-- Transparent background — no fill on root -->
+  <!-- Red rectangle body -->
+  <rect x="0" y="0" width="120" height="80" rx="4" fill="#D42B2B"/>
+  <!-- White diamond -->
+  <polygon points="60,8 108,40 60,72 12,40" fill="#FFFFFF"/>
+  <!-- Navy N -->
+  <text
+    x="60" y="52"
+    font-family="Arial Black, Arial, Helvetica, sans-serif"
+    font-size="36"
+    font-weight="900"
+    text-anchor="middle"
+    fill="#0B1F3A"
+  >N</text>
+</svg>
