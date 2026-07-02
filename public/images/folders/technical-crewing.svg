@@ -1,0 +1,53 @@
+﻿<svg width="1200" height="600" viewBox="0 0 1200 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="techSky" x1="94" y1="42" x2="1114" y2="580" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#001A26"/>
+      <stop offset="0.45" stop-color="#00435A"/>
+      <stop offset="1" stop-color="#16A2B8"/>
+    </linearGradient>
+    <radialGradient id="techAura" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(972 126) rotate(124) scale(360 380)">
+      <stop stop-color="#A5F3FC" stop-opacity="0.62"/>
+      <stop offset="1" stop-color="#A5F3FC" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="blur40" x="0" y="0" width="1200" height="600" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="40"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="600" fill="url(#techSky)"/>
+  <rect width="1200" height="600" fill="url(#techAura)"/>
+
+  <g opacity="0.22" stroke="#CCFBF1" stroke-width="1.2">
+    <path d="M0 478 H1200"/>
+    <path d="M0 430 H1200"/>
+    <path d="M0 382 H1200"/>
+    <path d="M0 334 H1200"/>
+    <path d="M0 286 H1200"/>
+    <path d="M0 238 H1200"/>
+    <path d="M0 190 H1200"/>
+  </g>
+
+  <g filter="url(#blur40)" opacity="0.36">
+    <circle cx="916" cy="118" r="90" fill="#67E8F9"/>
+    <circle cx="1014" cy="184" r="70" fill="#22D3EE"/>
+  </g>
+
+  <g opacity="0.9">
+    <path d="M220 430 C328 390 440 376 564 380 C676 384 794 414 882 460 L220 460 Z" fill="#0A2F3B"/>
+    <path d="M282 366 H604 L642 402 H256 Z" fill="#0E4D60"/>
+    <rect x="334" y="318" width="52" height="52" rx="8" fill="#0891B2"/>
+    <rect x="394" y="318" width="52" height="52" rx="8" fill="#06B6D4"/>
+    <rect x="454" y="318" width="52" height="52" rx="8" fill="#22D3EE"/>
+    <rect x="514" y="318" width="52" height="52" rx="8" fill="#67E8F9"/>
+    <path d="M722 258 L750 268 L744 300 L712 296 Z" fill="#CFFAFE"/>
+    <path d="M748 268 L786 282 L778 320 L742 302 Z" fill="#A5F3FC"/>
+  </g>
+
+  <g opacity="0.84">
+    <path d="M120 520 C212 458 290 434 372 426" stroke="#99F6E4" stroke-width="3" stroke-linecap="round" stroke-dasharray="10 10"/>
+    <circle cx="372" cy="426" r="8" fill="#CCFBF1"/>
+  </g>
+
+  <text x="122" y="116" fill="#ECFEFF" font-family="Sora, Segoe UI, Arial, sans-serif" font-size="44" font-weight="700" letter-spacing="1">TECHNICAL &amp; CREWING</text>
+  <text x="122" y="546" fill="#CCFBF1" font-family="Sora, Segoe UI, Arial, sans-serif" font-size="22" opacity="0.95">Engineering intelligence, maintenance systems, and crew operations readiness</text>
+</svg>
