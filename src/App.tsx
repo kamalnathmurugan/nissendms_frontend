@@ -58,15 +58,25 @@ export default function App() {
   const [showModal, setShowModal] = useState(false);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const index = useMemo(() => indexTree(tree), [tree]);
 
   const refresh = useCallback(async () => {
-    const [t, v] = await Promise.all([getTree(), listVessels()]);
-    setTree(t);
-    setVessels(v);
-    setLoading(false);
-    return { tree: t, vessels: v };
+    try {
+      const [t, v] = await Promise.all([getTree(), listVessels()]);
+      setTree(t);
+      setVessels(v);
+      setLoadError(null);
+      return { tree: t, vessels: v };
+    } catch (e) {
+      setTree([]);
+      setVessels([]);
+      setLoadError(errDetail(e, "Unable to load the frontend data from the API."));
+      return { tree: [], vessels: [] };
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -259,6 +269,11 @@ export default function App() {
         </div>
 
         <div className="flex-1 overflow-y-auto bg-[linear-gradient(180deg,#f6f5fc_0%,#f1effa_100%)] py-6">
+          {loadError && (
+            <div className="mx-2 mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 md:mx-3">
+              {loadError}
+            </div>
+          )}
           {view === "dashboard" ? (
             loading ? (
               <p className="text-sm text-slate-500">Loading dashboard...</p>
