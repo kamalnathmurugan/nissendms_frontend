@@ -1,15 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMsal } from "@azure/msal-react";
-import { ChevronRight, Eye, FolderOpen, Trash2 } from "lucide-react";
+import { Eye, Trash2 } from "lucide-react";
 import {
   ArrowDownToLine,
   ArrowRight,
   Bell,
-  Eye,
   Filter,
   Grid2x2,
   MoreVertical,
-  Trash2,
 } from "lucide-react";
 import {
   createVessel,
@@ -143,11 +141,6 @@ export default function App() {
   const [showModal, setShowModal] = useState(false);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<"dashboard" | "explorer">("dashboard");
-  const [path, setPath] = useState<string[]>([]);
-  const [showModal, setShowModal] = useState(false);
-  const [toasts, setToasts] = useState<ToastItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const index = useMemo(() => indexTree(tree), [tree]);
@@ -186,6 +179,18 @@ export default function App() {
   const openChild = (node: FolderNode) => {
     if (node.kind === "file") return;
     setPath((p) => [...p, node.id]);
+  };
+
+  const handleOpenVessel = (vessel: Vessel) => {
+    const mainFolder = tree.find((m) => m.id === path[0]) || tree[0];
+    if (!mainFolder) return;
+    const shipNode = mainFolder.children?.find(
+      (c) => c.kind === "ship" && c.name.toLowerCase() === vessel.name.toLowerCase()
+    );
+    if (shipNode) {
+      setView("explorer");
+      setPath([mainFolder.id, shipNode.id]);
+    }
   };
   const crumbTo = (i: number) => {
     setPath((p) => p.slice(0, i + 1));
@@ -406,6 +411,8 @@ export default function App() {
         onDashboard={goDashboard}
         onSelectMain={openMain}
         onNewVessel={() => setShowModal(true)}
+        onSignOut={handleSignOut}
+        onGlobalSignOut={handleGlobalSignOut}
       />
 
       <main className="flex min-w-0 flex-1 flex-col overflow-hidden">

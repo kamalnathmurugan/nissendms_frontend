@@ -167,16 +167,8 @@ function CardFooter() {
         256-BIT TLS ENCRYPTED CONNECTION
       </div>
 
-      <div className="flex items-center justify-center gap-3 mt-4 text-[10px] text-slate-400">
-        <a href="#" className="hover:text-slate-600 transition">Privacy Policy</a>
-        <span>·</span>
-        <a href="#" className="hover:text-slate-600 transition">Terms of Service</a>
-        <span>·</span>
-        <a href="#" className="hover:text-slate-600 transition">Security</a>
-      </div>
-
       <div className="text-center mt-3 text-[10px] tracking-[0.1em] text-slate-300">
-        REGISTRY SYNCED · 1,204 VESSELS · © 2026 NISSEN
+        REGISTRY SYNCED · 25 VESSELS · © 2026 NISSEN
       </div>
     </>
   );
