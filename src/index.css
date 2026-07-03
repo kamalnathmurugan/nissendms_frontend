@@ -1,33 +1,26 @@
-@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap");
 @import "tailwindcss";
 
 @theme {
-  /* Ocean teal primary */
+  /* Teal + lilac control palette */
   --color-brand-50: #f0fdfa;
   --color-brand-100: #ccfbf1;
   --color-brand-200: #99f6e4;
   --color-brand-300: #5eead4;
   --color-brand-400: #2dd4bf;
   --color-brand-500: #14b8a6;
-  --color-brand-600: #0d9488;
+  --color-brand-600: #0f8f87;
   --color-brand-700: #0f766e;
   --color-brand-800: #115e59;
   --color-brand-900: #134e4a;
-  /* Deep ink sidebar */
-  --color-navy-800: #0e2a33;
-  --color-navy-900: #0a2027;
-  --color-navy-950: #06161b;
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: "Playfair Display", ui-serif, Georgia, "Times New Roman", serif;
-  /* Darkened slate overrides for stronger text contrast */
-  --color-slate-400: #475569;
-  --color-slate-500: #334155;
-  --color-slate-600: #1e293b;
-  --color-slate-700: #0f172a;
-}
 
-html {
-  font-size: 20px;
+  --color-panel: #f4f3fb;
+  --color-panel-2: #efedf8;
+  --color-ink: #1a2138;
+  --color-muted: #697289;
+
+  --font-sans: "Sora", "Segoe UI", ui-sans-serif, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 }
 
 html,
@@ -38,12 +31,20 @@ body,
 
 body {
   margin: 0;
-  font-family: "Inter", ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica,
-    Arial, sans-serif;
-  font-weight: 700;
+  font-family: "Sora", "Segoe UI", ui-sans-serif, sans-serif;
+  font-weight: 400;
   -webkit-font-smoothing: antialiased;
-  background: #f1f5f9;
-  color: #0a0a0a;
+  background:
+    radial-gradient(circle at 12% 0%, #ffffff 0%, #f3f1fb 34%, #eceaf7 100%);
+  color: #1a2138;
+}
+
+#root {
+  isolation: isolate;
+}
+
+.mono {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
 }
 
 /* Thin, unobtrusive scrollbars */
@@ -51,10 +52,12 @@ body {
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
 }
+
 *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
+
 *::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 9999px;
