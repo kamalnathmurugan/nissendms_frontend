@@ -1,5 +1,11 @@
-import { useState } from "react";
-import { Anchor, LayoutDashboard, Layers, Plus, LogOut, MonitorX, AlertTriangle } from "lucide-react";
+import {
+  Compass,
+  Gauge,
+  LifeBuoy,
+  LogOut,
+  Sparkles,
+  Upload,
+} from "lucide-react";
 import type { FolderNode } from "../api";
 import { MAIN_ACCENTS } from "./nodeStyle";
 

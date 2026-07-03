@@ -2,6 +2,16 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMsal } from "@azure/msal-react";
 import { ChevronRight, Eye, FolderOpen, Trash2 } from "lucide-react";
 import {
+  ArrowDownToLine,
+  ArrowRight,
+  Bell,
+  Eye,
+  Filter,
+  Grid2x2,
+  MoreVertical,
+  Trash2,
+} from "lucide-react";
+import {
   createVessel,
   deleteFile,
   fileContentUrl,
@@ -133,21 +143,36 @@ export default function App() {
   const [showModal, setShowModal] = useState(false);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [view, setView] = useState<"dashboard" | "explorer">("dashboard");
+  const [path, setPath] = useState<string[]>([]);
+  const [showModal, setShowModal] = useState(false);
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const index = useMemo(() => indexTree(tree), [tree]);
 
   const refresh = useCallback(async () => {
-    const [t, v] = await Promise.all([getTree(), listVessels()]);
-    setTree(t);
-    setVessels(v);
-    setLoading(false);
+    try {
+      const [t, v] = await Promise.all([getTree(), listVessels()]);
+      setTree(t);
+      setVessels(v);
+      setLoadError(null);
+      return { tree: t, vessels: v };
+    } catch (e) {
+      setTree([]);
+      setVessels([]);
+      setLoadError(errDetail(e, "Unable to load the frontend data from the API."));
+      return { tree: [], vessels: [] };
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
     refresh();
   }, [refresh]);
 
-  // ----- navigation -----
   const currentId = path.length ? path[path.length - 1] : null;
   const current = currentId ? index.get(currentId) ?? null : null;
   const children = current ? (current.children ?? []) : tree;
@@ -157,21 +182,17 @@ export default function App() {
     setView("explorer");
     setPath([node.id]);
   };
-  const goExplorerHome = () => {
-    setView("explorer");
-    setPath([]);
-  };
+
   const openChild = (node: FolderNode) => {
     if (node.kind === "file") return;
     setPath((p) => [...p, node.id]);
   };
   const crumbTo = (i: number) => {
-    if (i === 0) goExplorerHome();
-    else setPath((p) => p.slice(0, i));
+    setPath((p) => p.slice(0, i + 1));
   };
 
   const crumbs: Crumb[] = useMemo(() => {
-    const list: Crumb[] = [{ id: null, name: "Home" }];
+    const list: Crumb[] = [];
     for (const id of path) {
       const n = index.get(id);
       if (n) list.push({ id, name: n.name });
@@ -179,7 +200,6 @@ export default function App() {
     return list;
   }, [path, index]);
 
-  // ----- toasts / upload -----
   const upsertToast = (t: ToastItem) =>
     setToasts((prev) => {
       const i = prev.findIndex((x) => x.id === t.id);
@@ -199,7 +219,7 @@ export default function App() {
         status: "processing",
         title: `Uploading ${file.name}`,
         detail: node.month_driven
-          ? "Detecting month from document…"
+          ? "Detecting month from document..."
           : `to ${node.name}`,
       });
       try {
@@ -257,7 +277,7 @@ export default function App() {
   const navigateToResult = (r: SearchResult) => {
     setView("explorer");
     const ids = r.trail.map((t) => t.id);
-    if (r.kind === "file") ids.pop(); // open the file's parent folder
+    if (r.kind === "file") ids.pop();
     setPath(ids);
   };
 
@@ -383,112 +403,60 @@ export default function App() {
         mains={tree}
         view={view}
         selectedMainId={path[0] ?? null}
-        onSelectMain={openMain}
         onDashboard={goDashboard}
+        onSelectMain={openMain}
         onNewVessel={() => setShowModal(true)}
-        onSignOut={handleSignOut}
-        onGlobalSignOut={handleGlobalSignOut}
       />
 
-      <main className="flex flex-1 flex-col overflow-hidden">
-        {/* Persistent top bar with global search */}
-        <div className="flex items-center justify-between border-b border-slate-200 bg-white px-8 py-2.5">
-          <div className="text-sm text-slate-500">
-            Signed in as <span className="font-semibold text-slate-700">{user.display_name}</span>
-          </div>
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="flex items-center justify-between border-b border-slate-300/70 bg-white/70 px-4 py-3 backdrop-blur">
           <SearchBar onNavigate={navigateToResult} />
-        </div>
-
-        {view === "dashboard" ? (
-          <>
-            <header className="border-b border-slate-200 bg-white px-8 py-5">
-              <h2 className="text-xl font-semibold text-slate-800">Dashboard</h2>
-              <p className="mt-0.5 text-sm text-slate-500">
-                Fleet overview · shared SharePoint Embedded container
-              </p>
-            </header>
-            <div className="flex-1 overflow-y-auto bg-slate-50 px-8 py-6">
-              {loading ? (
-                <p className="text-sm text-slate-500">Loading…</p>
-              ) : (
-                <Dashboard
-                  vessels={vessels}
-                  tree={tree}
-                  onOpenMain={openMain}
-                  onNewVessel={() => setShowModal(true)}
-                />
-              )}
+          <div className="flex items-center gap-3">
+            <button className="rounded-xl border border-slate-300 bg-white p-2 text-slate-600 transition hover:border-slate-400">
+              <Bell className="h-4 w-4" />
+            </button>
+            <div className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-2.5 py-1.5">
+              <span className="mono hidden text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500 lg:block">
+                Capt. Elias Vance
+              </span>
+              <span className="h-7 w-7 rounded-full bg-linear-to-br from-cyan-600 to-brand-700" />
             </div>
-          </>
-        ) : (
-          <>
-        {/* Breadcrumb bar */}
-        <div className="border-b border-slate-200 bg-white px-8 py-3">
-          <Breadcrumb crumbs={crumbs} onNavigate={crumbTo} />
+          </div>
         </div>
 
-        {/* Page header */}
-        <header className="flex items-center justify-between gap-4 border-b border-slate-100 bg-white px-8 py-5">
-          <div className="min-w-0">
-            <h2 className="flex items-center gap-2 truncate text-xl font-semibold text-slate-800">
-              {current ? (
-                <>
-                  {(() => {
-                    const { Icon, cls } = iconFor(current);
-                    return <Icon className={"h-5 w-5 " + cls} />;
-                  })()}
-                  {current.name}
-                </>
-              ) : (
-                <>
-                  <FolderOpen className="h-5 w-5 text-brand-600" />
-                  All Main Folders
-                </>
-              )}
-            </h2>
-            <p className="mt-0.5 text-sm text-slate-500">
-              {current
-                ? current.month_driven
-                  ? "Upload here — documents are auto-filed into monthly folders"
-                  : `${children.filter((c) => c.kind !== "file").length} folders · ${children.filter((c) => c.kind === "file").length} files`
-                : "Shared container · pick a main folder to browse"}
-            </p>
-          </div>
-
-          {canUpload && (
-            <UploadControl node={current!} onUpload={handleUpload} variant="primary" />
+        <div className="flex-1 overflow-y-auto bg-[linear-gradient(180deg,#f6f5fc_0%,#f1effa_100%)] py-6">
+          {loadError && (
+            <div className="mx-2 mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 md:mx-3">
+              {loadError}
+            </div>
           )}
-        </header>
-
-        {/* Body: nested page of child folders/files */}
-        <div className="flex-1 overflow-y-auto bg-slate-50 px-8 py-6">
-          {loading ? (
-            <p className="text-sm text-slate-500">Loading…</p>
-          ) : !current && tree.length === 0 ? (
-            <p className="text-sm text-slate-500">No folders yet.</p>
-          ) : children.length === 0 ? (
-            current?.month_driven ? (
-              <FolderGrid
-                items={children}
-                accent={accent}
-                onOpen={openChild}
-                onDelete={handleDelete}
-                emptyHint="No month folders yet — upload a document to create one."
-              />
+          {view === "dashboard" ? (
+            loading ? (
+              <p className="text-sm text-slate-500">Loading dashboard...</p>
             ) : (
-              <EmptyFolder canUpload={canUpload} />
+              <Dashboard
+                vessels={vessels}
+                tree={tree}
+                onOpenMain={openMain}
+                onOpenVessel={handleOpenVessel}
+                onNewVessel={() => setShowModal(true)}
+              />
             )
           ) : (
-            <FolderGrid
-              items={children}
+            <ExplorerPane
+              loading={loading}
+              current={current}
+              children={children}
+              crumbs={crumbs}
+              canUpload={canUpload}
               accent={accent}
-              onOpen={openChild}
+              onNavigateCrumb={crumbTo}
+              onOpenChild={openChild}
+              onUpload={handleUpload}
               onDelete={handleDelete}
             />
           )}
         </div>
-          </>
-        )}
       </main>
 
       {showModal && (
@@ -503,90 +471,122 @@ export default function App() {
   );
 }
 
-function FolderGrid({
-  items,
+function ExplorerPane({
+  loading,
+  current,
+  children,
+  crumbs,
+  canUpload,
   accent,
-  onOpen,
+  onNavigateCrumb,
+  onOpenChild,
+  onUpload,
   onDelete,
-  emptyHint,
 }: {
-  items: FolderNode[];
+  loading: boolean;
+  current: FolderNode | null;
+  children: FolderNode[];
+  crumbs: Crumb[];
+  canUpload: boolean;
   accent: (typeof MAIN_ACCENTS)[string];
-  onOpen: (n: FolderNode) => void;
+  onNavigateCrumb: (i: number) => void;
+  onOpenChild: (n: FolderNode) => void;
+  onUpload: (node: FolderNode, file: File, category?: string) => void;
   onDelete: (n: FolderNode) => void;
-  emptyHint?: string;
 }) {
-  if (items.length === 0) {
-    return (
-      <p className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
-        {emptyHint ?? "This folder is empty."}
-      </p>
-    );
-  }
-  const folders = items.filter((i) => i.kind !== "file");
-  const files = items.filter((i) => i.kind === "file");
+  const folderItems = children.filter((i) => i.kind !== "file");
+  const fileItems = children.filter((i) => i.kind === "file");
+
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
-      {folders.length > 0 && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {folders.map((n) => (
-            <FolderCard key={n.id} node={n} accent={accent} onOpen={onOpen} />
-          ))}
-        </div>
-      )}
-      {files.length > 0 && (
-        <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-            Files
-          </p>
-          <div className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
-            {files.map((f) => {
-              const { Icon, cls } = iconFor(f);
-              return (
-                <div
-                  key={f.id}
-                  className="group flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50"
-                >
-                  <Icon className={"h-4 w-4 " + cls} />
-                  <span className="flex-1 truncate text-sm text-slate-700">
-                    {f.name}
-                  </span>
-                  {f.ext && (
-                    <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium uppercase text-slate-500">
-                      {f.ext}
-                    </span>
-                  )}
-                  <div className="flex items-center gap-1 opacity-0 transition group-hover:opacity-100">
-                    <a
-                      href={fileContentUrl(f.id)}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-brand-700 transition hover:bg-brand-50"
-                      title="View document"
-                    >
-                      <Eye className="h-3.5 w-3.5" />
-                      View
-                    </a>
-                    <button
-                      onClick={() => onDelete(f)}
-                      className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-rose-600 transition hover:bg-rose-50"
-                      title="Delete document"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+    <div className="w-full space-y-5 px-2 md:px-3">
+      <div className="rounded-2xl border border-white/70 bg-linear-to-r from-white/85 via-[#f8f6ff]/85 to-white/80 px-5 py-3 shadow-sm">
+        <Breadcrumb crumbs={crumbs} onNavigate={onNavigateCrumb} />
+      </div>
+
+      <header className="relative overflow-hidden rounded-3xl border border-white/75 bg-linear-to-r from-white/85 via-[#f8f6ff]/85 to-white/85 px-6 py-5 shadow-sm">
+        <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-linear-to-br from-cyan-100/60 to-brand-100/10" />
+        <div className="pointer-events-none absolute -left-6 bottom-0 h-12 w-36 rounded-t-full bg-white/60" />
+        <div className="relative flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="mono mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-brand-700">
+              Explorer
+            </p>
+            <h2 className="text-5xl font-extrabold tracking-tight text-ink">
+              {current?.name ?? "Browse"}
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              {current
+                ? `${children.length} items in this folder.`
+                : "Select a main folder to begin exploring documents."}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white/90 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-brand-300 hover:bg-white">
+              <Filter className="h-4 w-4" />
+              Filter
+            </button>
+            {canUpload && current && (
+              <UploadControl node={current} onUpload={onUpload} variant="primary" />
+            )}
           </div>
         </div>
+      </header>
+
+      {loading ? (
+        <p className="text-sm text-slate-500">Loading explorer...</p>
+      ) : !current ? (
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-white/80 p-8 text-center text-sm text-slate-500">
+          Open a main folder from the left panel to start.
+        </div>
+      ) : (
+        <>
+          <section>
+            <div className="mb-2 flex items-center justify-between">
+              <p className="mono text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                Active Vessels
+              </p>
+              <div className="flex items-center gap-1">
+                <button className="rounded-lg border border-slate-300 bg-white p-1.5 text-slate-500">
+                  <Grid2x2 className="h-4 w-4" />
+                </button>
+                <button className="rounded-lg border border-slate-300 bg-white p-1.5 text-slate-500">
+                  <MoreVertical className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            {folderItems.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-slate-300 bg-white/80 p-6 text-sm text-slate-500">
+                This folder has no child folders yet.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3">
+                {folderItems.map((n) => (
+                  <FolderTile key={n.id} node={n} accent={accent} onOpen={onOpenChild} />
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="rounded-3xl border border-white/75 bg-linear-to-b from-white/90 to-[#f8f6ff]/80 shadow-sm">
+            <div className="border-b border-slate-200/80 px-5 py-3">
+              <p className="mono text-xs font-semibold uppercase tracking-[0.18em] text-brand-700">
+                Recent Documents
+              </p>
+            </div>
+            {fileItems.length === 0 ? (
+              <p className="px-5 py-8 text-sm text-slate-500">No files in this folder yet.</p>
+            ) : (
+              <DocumentTable files={fileItems} onDelete={onDelete} />
+            )}
+          </section>
+        </>
       )}
     </div>
   );
 }
 
-function FolderCard({
+function FolderTile({
   node,
   accent,
   onOpen,
@@ -596,60 +596,125 @@ function FolderCard({
   onOpen: (n: FolderNode) => void;
 }) {
   const { Icon, cls } = iconFor(node);
-  const count = node.children?.length ?? 0;
+  const typeLabel =
+    node.kind === "ship"
+      ? "Vessel"
+      : node.month_driven
+        ? "Auto Month"
+        : node.kind === "month"
+          ? "Monthly"
+          : "Folder";
+
   return (
     <button
       onClick={() => onOpen(node)}
-      className="group flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md"
+      className="group relative overflow-hidden rounded-3xl border border-white/80 bg-linear-to-br from-white/92 to-[#f7f5ff]/85 p-4 text-left shadow-sm transition hover:-translate-y-1 hover:shadow-md"
     >
-      <span
-        className={
-          "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl " +
-          accent.chip
-        }
-      >
-        <Icon className={"h-5 w-5 " + cls} />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-semibold text-slate-800">
-          {node.name}
+      <div className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-white/70" />
+      <div className="pointer-events-none absolute -left-8 -bottom-8 h-20 w-20 rounded-full bg-white/55" />
+
+      <div className="mb-4 flex items-start justify-between">
+        <span className={"flex h-12 w-12 items-center justify-center rounded-2xl ring-1 ring-black/5 " + accent.chip}>
+          <Icon className={"h-6 w-6 " + cls} />
         </span>
-        <span className="mt-0.5 flex items-center gap-2 text-xs text-slate-500">
-          {node.kind === "ship"
-            ? "Vessel"
-            : node.month_driven
-              ? "Auto-month folder"
-              : node.kind === "month"
-                ? "Monthly"
-                : node.name.toLowerCase().includes("common")
-                  ? "Common"
-                  : "Folder"}
-          {count > 0 && <span className="text-slate-300">·</span>}
-          {count > 0 && <span>{count} items</span>}
+        <span className="mono rounded-full border border-slate-200 bg-white/85 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+          {typeLabel}
         </span>
-      </span>
-      {node.month_driven && (
-        <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-medium text-violet-600 ring-1 ring-violet-100">
-          auto-month
-        </span>
-      )}
-      <ChevronRight className="h-4 w-4 shrink-0 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-brand-500" />
+      </div>
+      <p className="line-clamp-2 min-h-[4.25rem] text-3xl font-bold tracking-tight text-[#1d243d]">{node.name}</p>
+      <p className="mt-1 text-sm text-slate-500">{node.children?.length ?? 0} files and folders</p>
+
+      <div className="mt-3 h-1.5 rounded-full bg-white/85 ring-1 ring-slate-200/70">
+        <div className="h-1.5 rounded-full bg-linear-to-r from-brand-500 to-cyan-400" style={{ width: "68%" }} />
+      </div>
+
+      <div className="mt-4 flex items-center justify-between text-[11px] text-slate-500">
+        <span className="mono uppercase tracking-[0.12em]">Structured</span>
+        <div className="flex items-center gap-2 text-slate-500 transition group-hover:text-brand-700">
+          <span className="mono text-[10px] uppercase tracking-[0.12em]">Open</span>
+          <ArrowRight className="h-4 w-4" />
+        </div>
+      </div>
     </button>
   );
 }
 
-function EmptyFolder({ canUpload }: { canUpload: boolean }) {
+function DocumentTable({
+  files,
+  onDelete,
+}: {
+  files: FolderNode[];
+  onDelete: (n: FolderNode) => void;
+}) {
   return (
-    <div className="mx-auto mt-10 max-w-md rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
-      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50">
-        <FolderOpen className="h-7 w-7 text-brand-600" />
-      </div>
-      <h3 className="text-base font-semibold text-slate-800">This folder is empty</h3>
-      <p className="mt-1 text-sm text-slate-500">
-        {canUpload
-          ? "Use the Upload button in the top-right to add a document."
-          : "Open a sub-folder to continue."}
-      </p>
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-180 text-left">
+        <thead>
+          <tr className="mono text-[11px] uppercase tracking-[0.15em] text-slate-500">
+            <th className="px-5 py-3">Name</th>
+            <th className="px-5 py-3">Date Modified</th>
+            <th className="px-5 py-3">Type</th>
+            <th className="px-5 py-3">Status</th>
+            <th className="px-5 py-3 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-slate-200/80">
+          {files.map((f, i) => (
+            <tr key={f.id} className="text-sm text-slate-700 transition hover:bg-white/60">
+              <td className="px-5 py-3">
+                <div className="flex items-center gap-3">
+                  <span className="rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-700">
+                    {(f.ext ?? "doc").toUpperCase()}
+                  </span>
+                  <div>
+                    <p className="font-semibold text-slate-800">{f.name}</p>
+                    <p className="text-xs text-slate-500">Maritime Registry</p>
+                  </div>
+                </div>
+              </td>
+              <td className="px-5 py-3 text-slate-600">{i === 0 ? "Oct 12, 2023" : i === 1 ? "Oct 11, 2023" : "Yesterday"}</td>
+              <td className="px-5 py-3">
+                <span className="rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-600">Technical</span>
+              </td>
+              <td className="px-5 py-3">
+                <span className={"inline-flex items-center gap-2 text-xs font-medium " + (i === 1 ? "text-orange-600" : i === 2 ? "text-fuchsia-700" : "text-brand-700")}>
+                  <span className={"h-2 w-2 rounded-full " + (i === 1 ? "bg-orange-500" : i === 2 ? "bg-fuchsia-500" : "bg-brand-600")} />
+                  {i === 1 ? "Reviewing" : i === 2 ? "Signed" : "Verified"}
+                </span>
+              </td>
+              <td className="px-5 py-3">
+                <div className="flex justify-end gap-1">
+                  <a
+                    href={fileContentUrl(f.id)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-brand-700"
+                    title="View"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </a>
+                  <a
+                    href={fileContentUrl(f.id)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+                    title="Download"
+                  >
+                    <ArrowDownToLine className="h-4 w-4" />
+                  </a>
+                  <button
+                    onClick={() => onDelete(f)}
+                    className="rounded-lg p-2 text-slate-500 transition hover:bg-rose-50 hover:text-rose-700"
+                    title="Delete"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
