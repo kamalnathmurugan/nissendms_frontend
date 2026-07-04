@@ -25,12 +25,33 @@ import {
 import { LoginPage } from "./components/LoginPage";
 import { Sidebar } from "./components/Sidebar";
 import { CreateVesselModal } from "./components/CreateVesselModal";
+import { FilePreviewModal } from "./components/FilePreviewModal";
 import { Breadcrumb, type Crumb } from "./components/Breadcrumb";
 import { UploadControl } from "./components/UploadControl";
 import { ToastStack, type ToastItem } from "./components/Toast";
 import { Dashboard } from "./components/Dashboard";
 import { SearchBar } from "./components/SearchBar";
 import { MAIN_ACCENTS, iconFor } from "./components/nodeStyle";
+
+/** Fetch a file as a Blob and trigger a browser "Save As" download. */
+async function downloadFileById(fileId: string, fallbackName: string) {
+  const url = fileContentUrl(fileId);
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`Download failed: ${resp.status}`);
+  // Use filename from Content-Disposition if available.
+  const cd = resp.headers.get("content-disposition") ?? "";
+  const match = cd.match(/filename="?([^"\n]+)"?/i);
+  const filename = match?.[1]?.trim() || fallbackName;
+  const blob = await resp.blob();
+  const blobUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = blobUrl;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(blobUrl);
+}
 
 function errDetail(e: unknown, fallback: string): string {
   return (
@@ -139,6 +160,7 @@ export default function App() {
   const [view, setView] = useState<"dashboard" | "explorer">("dashboard");
   const [path, setPath] = useState<string[]>([]); // ids from a main folder down
   const [showModal, setShowModal] = useState(false);
+  const [previewFile, setPreviewFile] = useState<FolderNode | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -461,6 +483,7 @@ export default function App() {
               onOpenChild={openChild}
               onUpload={handleUpload}
               onDelete={handleDelete}
+              onPreview={setPreviewFile}
             />
           )}
         </div>
@@ -470,6 +493,13 @@ export default function App() {
         <CreateVesselModal
           onClose={() => setShowModal(false)}
           onCreate={handleCreate}
+        />
+      )}
+
+      {previewFile && (
+        <FilePreviewModal
+          file={previewFile}
+          onClose={() => setPreviewFile(null)}
         />
       )}
 
@@ -489,6 +519,7 @@ function ExplorerPane({
   onOpenChild,
   onUpload,
   onDelete,
+  onPreview,
 }: {
   loading: boolean;
   current: FolderNode | null;
@@ -500,6 +531,7 @@ function ExplorerPane({
   onOpenChild: (n: FolderNode) => void;
   onUpload: (node: FolderNode, file: File, category?: string) => void;
   onDelete: (n: FolderNode) => void;
+  onPreview: (n: FolderNode) => void;
 }) {
   const folderItems = children.filter((i) => i.kind !== "file");
   const fileItems = children.filter((i) => i.kind === "file");
@@ -584,7 +616,7 @@ function ExplorerPane({
             {fileItems.length === 0 ? (
               <p className="px-5 py-8 text-sm text-slate-500">No files in this folder yet.</p>
             ) : (
-              <DocumentTable files={fileItems} onDelete={onDelete} />
+              <DocumentTable files={fileItems} onDelete={onDelete} onPreview={onPreview} />
             )}
           </section>
         </>
@@ -649,9 +681,11 @@ function FolderTile({
 function DocumentTable({
   files,
   onDelete,
+  onPreview,
 }: {
   files: FolderNode[];
   onDelete: (n: FolderNode) => void;
+  onPreview: (n: FolderNode) => void;
 }) {
   return (
     <div className="overflow-x-auto">
@@ -691,24 +725,21 @@ function DocumentTable({
               </td>
               <td className="px-5 py-3">
                 <div className="flex justify-end gap-1">
-                  <a
-                    href={fileContentUrl(f.id)}
-                    target="_blank"
-                    rel="noreferrer"
+                  <button
+                    onClick={() => onPreview(f)}
                     className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-brand-700"
                     title="View"
                   >
                     <Eye className="h-4 w-4" />
-                  </a>
-                  <a
-                    href={fileContentUrl(f.id)}
-                    target="_blank"
-                    rel="noreferrer"
+                  </button>
+                  <button
+                    onClick={() => downloadFileById(f.id, f.name)}
                     className="rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
                     title="Download"
+                    type="button"
                   >
                     <ArrowDownToLine className="h-4 w-4" />
-                  </a>
+                  </button>
                   <button
                     onClick={() => onDelete(f)}
                     className="rounded-lg p-2 text-slate-500 transition hover:bg-rose-50 hover:text-rose-700"
